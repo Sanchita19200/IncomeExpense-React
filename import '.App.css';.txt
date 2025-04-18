@@ -1,0 +1,30 @@
+import './App.css';
+import useState from 'react';
+
+export default function App() {
+  const[tasks, setTasks] = useState([
+    {id: 1, name:"Samantha", applied: true},
+    {id: 2, name:"Umesh", applied: true},
+    {id: 3, name:"Megha", applied: true},
+    {id: 4, name:"Dinesh", applied: true},
+    {id: 5, name:"Yogesh", applied: true},
+    {id: 6, name:"Udit", applied: true},
+    {id: 7, name:"Aryan", applied: true},
+    {id: 8, name:"Sanchita", applied: true},
+  ])
+  return (
+    <>
+    <div className='App'>
+      <h1>Task List</h1>
+        <ul>
+          {tasks.map((task)=> (
+            <li key={task.id}>
+              <h1>{task.name}</h1>
+              <button>Delete</button>
+            </li>
+          ))}
+        </ul>
+    </div>
+    </>
+  )
+}

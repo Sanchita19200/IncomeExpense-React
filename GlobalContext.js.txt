@@ -1,0 +1,534 @@
+GlobalContext.js
+
+import React, { createContext, useReducer } from 'react';
+
+const initialState = {
+  transactions: [],
+};
+
+export const GlobalContext = createContext(initialState);
+
+const AppReducer = (state, action) => {
+  switch(action.type) {
+    case 'ADD_TRANSACTION':
+      return {
+        ...state,
+        transactions: [action.payload, ...state.transactions],
+      };
+    case 'DELETE_TRANSACTION':
+      return {
+        ...state,
+        transactions: state.transactions.filter(tx => tx.id !== action.payload),
+      };
+    default:
+      return state;
+  }
+};
+
+export const GlobalProvider = ({ children }) => {
+  const [state, dispatch] = useReducer(AppReducer, initialState);
+
+  function addTransaction(transaction) {
+    dispatch({ type: 'ADD_TRANSACTION', payload: transaction });
+  }
+
+  function deleteTransaction(id) {
+    dispatch({ type: 'DELETE_TRANSACTION', payload: id });
+  }
+
+  return (
+    <GlobalContext.Provider value={{
+      transactions: state.transactions,
+      addTransaction,
+      deleteTransaction
+    }}>
+      {children}
+    </GlobalContext.Provider>
+  );
+};
+
+
+
+
+--------------------------------------------------
+
+context/GlobalState.js
+
+import React, { createContext, useReducer } from 'react';
+
+// Initial dummy state
+const initialState = {
+  transactions: [
+    {
+      id: 1,
+      type: 'income',
+      category: 'SALARY INCOME',
+      amount: 100000,
+      date: '2025-04-11',
+    },
+    {
+      id: 2,
+      type: 'expense',
+      category: 'SCHOOL EXPENSE',
+      amount: 1000,
+      date: '2025-04-11',
+    },
+  ],
+};
+
+// Create context
+export const GlobalContext = createContext(initialState);
+
+// Reducer
+const AppReducer = (state, action) => {
+  switch (action.type) {
+    case 'ADD_TRANSACTION':
+      return {
+        ...state,
+        transactions: [action.payload, ...state.transactions],
+      };
+    case 'DELETE_TRANSACTION':
+      return {
+        ...state,
+        transactions: state.transactions.filter((t) => t.id !== action.payload),
+      };
+    default:
+      return state;
+  }
+};
+
+// Provider
+export const GlobalProvider = ({ children }) => {
+  const [state, dispatch] = useReducer(AppReducer, initialState);
+
+  // Actions
+  const addTransaction = (transaction) => {
+    dispatch({ type: 'ADD_TRANSACTION', payload: transaction });
+  };
+
+  const deleteTransaction = (id) => {
+    dispatch({ type: 'DELETE_TRANSACTION', payload: id });
+  };
+
+  return (
+    <GlobalContext.Provider
+      value={{
+        transactions: state.transactions,
+        addTransaction,
+        deleteTransaction,
+      }}
+    >
+      {children}
+    </GlobalContext.Provider>
+  );
+};
+
+
+-------------------------------------------------------------
+
+index.js:
+
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import { GlobalProvider } from './context/GlobalState';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <GlobalProvider>
+    <App />
+  </GlobalProvider>
+);
+
+-------------------------------------------------------------------
+IncomeCard.js
+
+import React, { useContext } from 'react';
+import { GlobalContext } from '../context/GlobalState';
+import { Card, CardContent, Typography } from '@mui/material';
+
+const IncomeCard = () => {
+  const { transactions } = useContext(GlobalContext);
+
+  const totalIncome = transactions
+    .filter((t) => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  return (
+    <Card sx={{ border: '1px solid green' }}>
+      <CardContent>
+        <Typography variant="h6" color="green">
+          TOTAL INCOME
+        </Typography>
+        <Typography variant="h5" color="green">
+          {totalIncome}
+        </Typography>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default IncomeCard;
+
+
+--------------------------------------------------------------
+
+IncomeButton.js
+
+import React, { useState } from 'react';
+import { Button, Dialog } from '@mui/material';
+import IncomeForm from './IncomeForm';
+
+const IncomeButton = () => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button variant="contained" onClick={() => setOpen(true)}>
+        INCOME
+      </Button>
+      <Dialog open={open} onClose={() => setOpen(false)}>
+        <IncomeForm closeModal={() => setOpen(false)} />
+      </Dialog>
+    </>
+  );
+};
+
+export default IncomeButton;
+
+
+---------------------------------------------------------------------
+IncomeForm.js
+
+import React, { useState, useContext } from 'react';
+import { TextField, Button, Box } from '@mui/material';
+import { GlobalContext } from '../context/GlobalState';
+
+const IncomeForm = ({ closeModal }) => {
+  const { addTransaction } = useContext(GlobalContext);
+  const [amount, setAmount] = useState('');
+  const [category, setCategory] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const newTransaction = {
+      id: Date.now(),
+      type: 'income',
+      category,
+      amount: parseFloat(amount),
+      date: new Date().toISOString().split('T')[0],
+    };
+
+    addTransaction(newTransaction);
+    closeModal();
+  };
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <form onSubmit={handleSubmit}>
+        <TextField
+          fullWidth
+          label="Income Source"
+          variant="outlined"
+          margin="normal"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        />
+        <TextField
+          fullWidth
+          label="Amount"
+          type="number"
+          variant="outlined"
+          margin="normal"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+        />
+        <Button type="submit" variant="contained" color="success" fullWidth>
+          Add Income
+        </Button>
+      </form>
+    </Box>
+  );
+};
+
+export default IncomeForm;
+
+
+-------------------------------------------
+ExpenseButton.js
+
+import * as React from 'react';
+import Button from '@mui/material/Button';
+import Stack from '@mui/material/Stack';
+import RemoveIcon from '@mui/icons-material/Remove';
+import Dialog from '@mui/material/Dialog';
+import ExpenseForm from './ExpenseForm'; // 👈 You'll create this next
+
+export default function ExpenseButton() {
+  const [open, setOpen] = React.useState(false);
+
+  const handleClickOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
+
+  return (
+    <Stack direction="row" spacing={2}>
+      <Button
+        variant="outlined"
+        startIcon={<RemoveIcon />}
+        onClick={handleClickOpen}
+      >
+        Expense
+      </Button>
+
+      <Dialog open={open} onClose={handleClose}>
+        <ExpenseForm closeModal={handleClose} />
+      </Dialog>
+    </Stack>
+  );
+}
+
+-------------------------------------------------------
+
+ExpenseForm.js
+
+import React, { useState, useContext } from 'react';
+import { TextField, Button, Box } from '@mui/material';
+import { GlobalContext } from '../context/GlobalState';
+
+const ExpenseForm = ({ closeModal }) => {
+  const { addTransaction } = useContext(GlobalContext);
+  const [amount, setAmount] = useState('');
+  const [category, setCategory] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const newTransaction = {
+      id: Date.now(),
+      type: 'expense',
+      category,
+      amount: parseFloat(amount),
+      date: new Date().toISOString().split('T')[0],
+    };
+
+    addTransaction(newTransaction);
+    closeModal();
+  };
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <form onSubmit={handleSubmit}>
+        <TextField
+          fullWidth
+          label="Expense Category"
+          variant="outlined"
+          margin="normal"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        />
+        <TextField
+          fullWidth
+          label="Amount"
+          type="number"
+          variant="outlined"
+          margin="normal"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+        />
+        <Button type="submit" variant="contained" color="error" fullWidth>
+          Add Expense
+        </Button>
+      </form>
+    </Box>
+  );
+};
+
+export default ExpenseForm;
+
+
+
+------------------------------------------------
+OutlinedCard.js (aka ExpenseCard)
+
+import * as React from 'react';
+import { useContext } from 'react';
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import MoneyOffIcon from '@mui/icons-material/MoneyOff';
+import { GlobalContext } from '../context/GlobalState';
+
+const bull = (
+  <Box
+    component="span"
+    sx={{ display: 'inline-block', mx: '2px', transform: 'scale(0.8)' }}
+  >
+    •
+  </Box>
+);
+
+export default function OutlinedCard() {
+  const { transactions } = useContext(GlobalContext);
+
+  // 🧠 Filter only expenses
+  const expenses = transactions
+    .filter((txn) => txn.type === 'expense')
+    .map((txn) => txn.amount);
+
+  // 🧮 Calculate total expense
+  const totalExpense = expenses.reduce((acc, val) => acc + val, 0).toFixed(2);
+
+  return (
+    <Box sx={{ minWidth: 275 }}>
+      <Card variant="outlined">
+        <CardContent sx={{ backgroundColor: '#eda19d' }}>
+          <MoneyOffIcon />
+          <Typography variant="h5" component="div" sx={{ color: 'white' }}>
+            E{bull}X{bull}P{bull}E{bull}N{bull}S{bull}E{bull}S
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{ margin: '10px', fontSize: '15px', fontWeight: 'bold' }}
+          >
+            ₹ {totalExpense}
+          </Typography>
+        </CardContent>
+      </Card>
+    </Box>
+  );
+}
+
+
+--------------------------------------------------
+
+IncomeButton.js
+
+import * as React from 'react';
+import Button from '@mui/material/Button';
+import Stack from '@mui/material/Stack';
+import AddIcon from '@mui/icons-material/Add';
+
+export default function IncomeButton() {
+  return (
+    <Stack direction="row" spacing={2}>
+      <Button variant="contained" startIcon={<AddIcon />}>
+        Income
+      </Button>
+    </Stack>
+  );
+}
+
+
+-------------------------------------------------
+IncomeCard.js (fully dynamic):
+
+import * as React from 'react';
+import { useContext } from 'react';
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import { GlobalContext } from '../context/GlobalState';
+
+const bull = (
+  <Box
+    component="span"
+    sx={{ display: 'inline-block', mx: '2px', transform: 'scale(0.8)' }}
+  >
+    •
+  </Box>
+);
+
+export default function IncomeCard() {
+  const { transactions } = useContext(GlobalContext);
+
+  // 🔍 Get only income transactions
+  const income = transactions
+    .filter((txn) => txn.type === 'income')
+    .map((txn) => txn.amount);
+
+  // 💰 Calculate total income
+  const totalIncome = income.reduce((acc, val) => acc + val, 0).toFixed(2);
+
+  return (
+    <Box sx={{ minWidth: 275 }}>
+      <Card variant="outlined">
+        <CardContent sx={{ backgroundColor: '#abed9d' }}>
+          <AttachMoneyIcon />
+          <Typography variant="h5" component="div" sx={{ color: 'white' }}>
+            I{bull}N{bull}C{bull}O{bull}M{bull}E
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{ margin: '10px', fontSize: '15px', fontWeight: 'bold' }}
+          >
+            ₹ {totalIncome}
+          </Typography>
+        </CardContent>
+      </Card>
+    </Box>
+  );
+}
+
+
+-----------------------------------------------------------
+
+ProfitCard.js
+
+import * as React from 'react';
+import { useContext } from 'react';
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import { GlobalContext } from '../context/GlobalState';
+
+const bull = (
+  <Box
+    component="span"
+    sx={{ display: 'inline-block', mx: '2px', transform: 'scale(0.8)' }}
+  >
+    •
+  </Box>
+);
+
+export default function ProfitCard() {
+  const { transactions } = useContext(GlobalContext);
+
+  // Separate income and expenses
+  const income = transactions
+    .filter((t) => t.type === 'income')
+    .reduce((acc, curr) => acc + curr.amount, 0);
+
+  const expenses = transactions
+    .filter((t) => t.type === 'expense')
+    .reduce((acc, curr) => acc + curr.amount, 0);
+
+  const profit = (income - expenses).toFixed(2); // final 💰 result
+
+  return (
+    <Box sx={{ minWidth: 275 }}>
+      <Card variant="outlined">
+        <CardContent sx={{ backgroundColor: '#9db1ed' }}>
+          <AccountBalanceIcon />
+          <Typography variant="h5" component="div" sx={{ color: 'white' }}>
+            P{bull}R{bull}O{bull}F{bull}I{bull}T
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{ margin: '10px', fontSize: '15px', fontWeight: 'bold' }}
+          >
+            ₹ {profit}
+          </Typography>
+        </CardContent>
+      </Card>
+    </Box>
+  );
+}
+
+----------------------------------------------------------
+
