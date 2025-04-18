@@ -39,7 +39,7 @@ AddTransaction(newTransaction)
       <div className="htmlForm-control">
         <label htmlFor="amount"
           > <span style={{ fontWeight: 'bolder', fontSize: '18px' }}>Amount</span> <br />
-          <span style={{textAlign: 'center'}}>Enter a <span style={{fontWeight:'bolder'}}>negative</span> amount is expense and <span style={{fontWeight:'bolder'}}>Positive</span> is amount is income</span>
+          <span style={{textAlign: 'center'}}>Enter a <span style={{fontWeight:'bolder'}}>negative</span> amount that is a expense or <span style={{fontWeight:'bolder'}}>Positive</span> an that amount is income</span>
           <p style={{textAlign: 'center'}}>"Example(-200 is an expense, 400 is an income)"</p>
         /</label>
         <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)}  placeholder="Enter amount..." />
